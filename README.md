@@ -1,6 +1,8 @@
 # Fortune
 
-Cash flow risk simulation for a legal-aid non-profit. Figures out how much cash reserve is actually needed to safely fund cases, instead of guessing off a gut number.
+Full pipeline for how a legal-aid non-profit should hold its cash: size the reserve, allocate it across cash / fixed income / equity under the org's investment policy, check current holdings against that policy, and produce a board-facing report.
+
+Only the reserve-sizing piece exists right now. Everything past that is roadmap — see Future below.
 
 Built and validated on a real org's real banking data. That data isn't in this repo — `data/` is synthetic, generated to match its structure. See `scripts/generate_sample_data.py`.
 
@@ -16,12 +18,12 @@ This currently has:
 
 Future:
 
-- Net cash flow (inflows − outflows), not outflows only
-- Re-estimate case-funding rate once more real events happen (n=1 right now)
-- Portfolio / reserve allocation
-- Web UI instead of CLI
-- LLM layer to draft the board memo
-- Auto-generated board packet
+- Net cash flow modeling — track inflows (levy receipts, transfers in) against outflows instead of assuming zero income
+- Re-estimate case-funding frequency/severity empirically once more real events accrue; it's board-assumed off n=1 right now
+- Portfolio / reserve allocation — split the non-operating reserve across cash, fixed income, and equity under the org's policy constraints (Black-Litterman expected returns, Ledoit-Wolf covariance shrinkage), and flag holdings that fall outside policy ranges
+- Web UI instead of CLI, so the board doesn't need a terminal to see this
+- LLM layer that drafts the board memo from the report output
+- Auto-generate the full board packet (report + figures + memo) as one document
 
 ## Stack
 
@@ -33,6 +35,8 @@ Future:
 - pytest - tests
 
 No web framework, no database, no external API. Just a CLI.
+
+Built with Claude Code (Sonnet 5).
 
 ## Dataset
 
