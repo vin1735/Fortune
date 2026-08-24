@@ -1,0 +1,19 @@
+{
+  "_comment": "Template for a LOCAL, NON-COMMITTED overrides file. Copy this to local_config.json (already in .gitignore), fill in your real organization's real figures, and pass it via --overrides-json. Never fill in real values here or in any tracked file.",
+  "rent_monthly_amount": -1000.00,
+  "rent_quarterly_amount": -3000.00,
+  "subscription_vendor_keyword": "YourVendorName",
+  "subscription_monthly_amount": 50.00,
+  "counterpart_account_ids": ["000000000000", "111111111111"],
+  "confirmed_case_fundings": [
+    {"date": "2026-01-15", "amount": -100000.00, "description_contains": "cheque", "label": "case disbursement"}
+  ],
+  "confirmed_idiosyncratic": [
+    {"date": "2025-06-01", "amount": -20000.00, "description_contains": "cheque", "label": "one-off"},
+    {"date": "2025-01-01", "amount": -10000.00, "description_contains": "draft purchase", "label": "one-off"},
+    {"date": "2024-09-01", "amount": -5000.00, "description_contains": "cheque", "label": "one-off"}
+  ],
+  "liquid_chequing": 10000.00,
+  "liquid_savings": 50000.00,
+  "liquid_investment_cash_sleeve": 100000.00
+}
