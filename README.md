@@ -9,7 +9,6 @@ This model currently has the following features:
 - Three-mechanism Monte Carlo engine (deterministic baseline + case-funding frequency/severity model + bootstrap idiosyncratic tail), instead of one naive bootstrap over raw cash flow
 - Rule-based transaction classifier that excludes internal transfers and bounced payments from spend
 - Bootstrap confidence intervals on thin-sample tail estimates, not just a point number
-- IPS reserve minimum kept separate from the model's statistical buffer
 - CLI with seeded, reproducible runs, and a local-overrides file so real org data never touches tracked code
 - Four matplotlib figures, regenerable on demand
 - Full test suite: statistical correctness, classification, reproducibility, degenerate inputs, monotonicity, stress cases
