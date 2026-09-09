@@ -7,7 +7,7 @@ Built and validated on a real org's real banking data. That data isn't in this r
 This model currently has the following features:
 
 - Three-mechanism Monte Carlo engine (deterministic baseline + case-funding frequency/severity model + bootstrap idiosyncratic tail), instead of one naive bootstrap over raw cash flow
-- Rule-based transaction classifier that excludes internal transfers and bounced payments from spend
+- Rule-based transaction classifier which excludes internal transfers and bounced payments from spend
 - Bootstrap confidence intervals on thin-sample tail estimates, not just a point number
 - CLI with seeded, reproducible runs, and a local-overrides file so real org data never touches tracked code
 - Four matplotlib figures, regenerable on demand
