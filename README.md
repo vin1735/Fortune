@@ -2,7 +2,7 @@
 
 Full pipeline for how a legal-aid non-profit should hold its cash: size the reserve, allocate it across cash / fixed income / equity under the org's investment policy, check current holdings against that policy, and produce a board-facing report.
 
-Built and validated on a org's real banking data. That data isn't in this repo — `data/` is synthetic, generated to match its structure. See `scripts/generate_sample_data.py`.
+Built and validated on organisation's real banking data. That data isn't in this repo — `data/` is synthetic, generated to match its structure. See `scripts/generate_sample_data.py`.
 
 This model currently has the following features:
 
