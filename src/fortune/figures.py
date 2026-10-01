@@ -27,18 +27,30 @@ from matplotlib.colors import LinearSegmentedColormap
 from fortune.config import FortuneConfig, UniformContinuousSeverity, UniformDiscreteFrequency
 from fortune.simulate import SimulationResult, run_simulation
 
-COVERED_COLOR = "#2f7d6b"
-SHORTFALL_COLOR = "#b3452c"
-NEUTRAL_COLOR = "#4a5568"
-GRID_COLOR = "#d0d5dd"
+BG_COLOR = "#0d1117"
+FG_COLOR = "#c9d1d9"
+MUTED_COLOR = "#8b949e"
+GRID_COLOR = "#21262d"
+COVERED_COLOR = "#1f6feb"
+SHORTFALL_COLOR = "#39d0ff"
+NEUTRAL_COLOR = MUTED_COLOR
 
-_COVERAGE_CMAP = LinearSegmentedColormap.from_list("coverage", [SHORTFALL_COLOR, "#e8dcae", COVERED_COLOR])
+_COVERAGE_CMAP = LinearSegmentedColormap.from_list("coverage", [SHORTFALL_COLOR, GRID_COLOR, COVERED_COLOR])
 
 plt.rcParams.update(
     {
         "figure.dpi": 100,
         "savefig.dpi": 100,
         "font.size": 10,
+        "font.family": "monospace",
+        "figure.facecolor": BG_COLOR,
+        "axes.facecolor": BG_COLOR,
+        "savefig.facecolor": BG_COLOR,
+        "axes.edgecolor": GRID_COLOR,
+        "axes.labelcolor": FG_COLOR,
+        "text.color": FG_COLOR,
+        "xtick.color": MUTED_COLOR,
+        "ytick.color": MUTED_COLOR,
         "axes.spines.top": False,
         "axes.spines.right": False,
         "axes.grid": True,
@@ -50,7 +62,7 @@ plt.rcParams.update(
 
 
 def _caption(fig, text: str) -> None:
-    fig.text(0.5, -0.02, text, ha="center", va="top", fontsize=8, color="#555555", wrap=True)
+    fig.text(0.5, -0.02, text, ha="center", va="top", fontsize=8, color=MUTED_COLOR, wrap=True)
 
 
 def plot_distribution_histogram(result: SimulationResult, path: Path) -> Path:
@@ -63,9 +75,9 @@ def plot_distribution_histogram(result: SimulationResult, path: Path) -> Path:
     centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     widths = np.diff(bin_edges)
     colors = [COVERED_COLOR if edge < liquid else SHORTFALL_COLOR for edge in bin_edges[:-1]]
-    ax.bar(centers, counts, width=widths * 0.95, color=colors, edgecolor="white", linewidth=0.3)
+    ax.bar(centers, counts, width=widths * 0.95, color=colors, edgecolor=BG_COLOR, linewidth=0.3)
 
-    ax.axvline(liquid, color="black", linestyle="--", linewidth=1.5)
+    ax.axvline(liquid, color="white", linestyle="--", linewidth=1.5)
     ax.text(
         liquid,
         ax.get_ylim()[1] * 0.97,
@@ -86,7 +98,7 @@ def plot_distribution_histogram(result: SimulationResult, path: Path) -> Path:
     _caption(
         fig,
         f"n={result.n_iterations:,} simulated years, seed={result.seed}. Case funding: {freq}, {sev} "
-        f"(board-assumed). Teal = years covered by current liquid holdings; terracotta = years it would "
+        f"(board-assumed). Blue = years covered by current liquid holdings; glowing cyan = years it would "
         f"not be.",
     )
     fig.tight_layout()
@@ -109,8 +121,8 @@ def plot_coverage_curve(result: SimulationResult, path: Path) -> Path:
     ax.fill_between(levels, 0, coverage_prob * 100, color=NEUTRAL_COLOR, alpha=0.08)
 
     current_coverage = (total <= liquid).mean() * 100
-    ax.scatter([liquid], [current_coverage], color="black", zorder=5, s=40)
-    ax.axvline(liquid, color="black", linestyle="--", linewidth=1.2)
+    ax.scatter([liquid], [current_coverage], color="white", zorder=5, s=40)
+    ax.axvline(liquid, color="white", linestyle="--", linewidth=1.2)
     ax.annotate(
         f"current liquid\n${liquid:,.0f} -> {current_coverage:.1f}% covered",
         xy=(liquid, current_coverage),
@@ -220,7 +232,9 @@ def plot_sensitivity_grid(
     for i in range(len(frequency_ranges)):
         for j in range(len(severity_caps)):
             value = grid[i, j]
-            text_color = "white" if value < 50 else "black"
+            r, g, b, _ = im.cmap(im.norm(value))
+            luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+            text_color = "black" if luminance > 0.5 else "white"
             ax.text(j, i, f"{value:.1f}%", ha="center", va="center", color=text_color, fontsize=11)
 
     cbar = fig.colorbar(im, ax=ax)
