@@ -1,60 +1,59 @@
 # Fortune
 
-Full pipeline for how a legal-aid non-profit should hold its cash: size the reserve, allocate it across cash / fixed income / equity under the org's investment policy, check current holdings against that policy, and produce a board-facing report.
+This tool sizes the cash reserve for a legal-aid non-profit.
 
-Built and validated on organisation's real banking data. That data isn't in this repo — `data/` is synthetic, generated to match its structure. See `scripts/generate_sample_data.py`.
+It's built and validated on the organisation's real banking data. That data isn't in this repo; `data/` is a synthetic copy with the same structure.
 
-This model currently has the following features:
+This tool currently has the following features:
 
-- Three-mechanism Monte Carlo engine (deterministic baseline + case-funding frequency/severity model + bootstrap idiosyncratic tail), instead of one naive bootstrap over raw cash flow
-- Rule-based transaction classifier which excludes internal transfers and bounced payments from spend
-- Bootstrap confidence intervals on thin-sample tail estimates, not just a point number
-- CLI with seeded, reproducible runs, and a local-overrides file so real org data never touches tracked code
-- Four matplotlib figures, regenerable on demand
-- Full test suite: statistical correctness, classification, reproducibility, degenerate inputs, monotonicity, stress cases
+- Three-mechanism Monte Carlo engine (baseline + case funding + bootstrapped tail)
+- Transaction classifier that strips out internal transfers and bounced payments
+- Confidence intervals on thin-sample tail estimates
+- Seeded, reproducible runs from a CLI
+- Figures, regenerable on demand
+- Full test suite against analytic ground truth
 
-Future features I would like to include:
+Future features that I would like to include:
 
-- Net cash flow modelling: track inflows (levy receipts, transfers in) against outflows instead of assuming zero income
-- Re-estimate case-funding frequency/severity empirically once more real events accrue; it's board-assumed off n=1 right now
-- Portfolio / reserve allocation: split the non-operating reserve across cash, fixed income, and equity under the org's policy constraints (Black-Litterman expected returns, Ledoit-Wolf covariance shrinkage), and flag holdings that fall outside policy ranges
-- Web UI instead of CLI, so the board doesn't need a terminal to see this
-- LLM layer that drafts the board memo from the report output
-- Auto-generate the full board packet (report + figures + memo) as one document
+- Net cash flow modelling, tracking inflows as well as outflows
+- Re-estimate case funding once more real events accrue (board-assumed off n=1 right now)
+- Reserve allocation across cash, fixed income and equity (Black-Litterman, Ledoit-Wolf)
+- Flag holdings that fall outside policy ranges
+- Web UI instead of CLI
+- LLM-drafted board memo
+- Full board packet as one document
 
-## Stack
+## Services Used
 
-- Claude Sonnet 5
-- Python 3.11+
-- numpy - Monte Carlo sampling
-- pandas - transaction loading/classification
-- scipy - ground-truth stats for tests
-- matplotlib - figures
-- pytest - tests
-
-No web framework, no database, no external API. Just a CLI.
+- Language - [Python](https://www.python.org)
+- Monte Carlo Sampling - [NumPy](https://numpy.org)
+- Transaction Loading - [pandas](https://pandas.pydata.org)
+- Ground-Truth Stats - [SciPy](https://scipy.org)
+- Figures - [Matplotlib](https://matplotlib.org)
+- Tests - [pytest](https://docs.pytest.org)
+- Helpful Partner - [Claude](https://claude.ai)
 
 ## Dataset
 
-Two bank accounts (chequing + savings), same schema: date, description, sub-description, type, amount, balance.
+Two bank accounts, chequing and savings.
 
-Real data withheld. `scripts/generate_sample_data.py` builds a synthetic sample with the same edge cases: irregular rent cadence, an NSF reversal, both kinds of internal transfer, a pre-funded disbursement, thin-sample one-offs, zero-activity months.
+Real data withheld. `scripts/generate_sample_data.py` builds a synthetic sample with the same edge cases.
 
 TODO: generator doesn't model inflows yet.
 
-## How it works
+## Simulate
 
-1. `loader.py` - load + validate the CSVs
-2. `classify.py` - bucket every transaction (recurring / case funding / internal transfer / returned item / one-off / other)
-3. `baseline.py`, `case_funding.py`, `tail.py` - the three mechanisms
-4. `simulate.py` - combine mechanisms, run the Monte Carlo
-5. `report.py` / `figures.py` - output
+Use `simulate.py` to:
+
+- Bucket every transaction (`classify.py`)
+- Model the baseline, case funding and tail (`baseline.py`, `case_funding.py`, `tail.py`)
+- Run 50,000 simulated years against current liquid holdings
 
 ## Results
 
 ![Distribution](docs/sample_figures/figure1_distribution_histogram.png)
 
-On the real data: current reserves cover ~97.7% of simulated years, short ~$10K at the 99th percentile (~$315K needed). Figure above is from the synthetic sample, not the real numbers.
+On the real data, current reserves cover about 97.7% of simulated years, short about $10K at the 99th percentile ($315K needed). Figure above is from the synthetic sample.
 
 ## Run it
 
@@ -64,4 +63,4 @@ python -m fortune.cli --data data/ --seed 42 --figures
 pytest
 ```
 
-Against real data: fill in `local_config.example.json`, pass it via `--overrides-json`.
+Against real data: fill in `local_config.example.json` and pass it with `--overrides-json`.
