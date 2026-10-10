@@ -1,8 +1,8 @@
 # Fortune
 
-This tool sizes the cash reserve for a legal-aid non-profit, and recommends how to split what's left over across cash, fixed income and equity.
+This tool sizes the cash reserve for a legal-aid non-profit, and recommends how to invest across cash, fixed income and equity.
 
-It's built and validated on the organisation's real banking data, and cross-checked against a decade of the organisation's own historical records (board minutes, past budgets, case funding history). None of that is in this repo; `data/` is a synthetic copy of the banking data, same structure.
+It's built and validated on the organisation's real banking data, and cross-checked against a decade of the organisation's own historical records (board minutes, past budgets, case funding history). None of that is in this repo (can't risk privileged information); `data/` is a synthetic copy of the banking data, same structure. 
 
 This tool currently has the following features:
 
