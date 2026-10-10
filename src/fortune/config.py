@@ -183,6 +183,44 @@ class UniformContinuousSeverity:
 
 
 @dataclass(frozen=True)
+class ShiftedLogNormalSeverity:
+    """Default severity sampler: a hard floor plus a lognormal draw.
+
+    Provenance: board-assumed shape, parameterized against real confirmed
+    case-funding amounts found across the org's 2015-2026 archive: ordinary
+    cases ran $435-$35K (lawyer-referral subsidies up through multi-year
+    litigation tranches), and one real, confirmed disbursement of $150,000
+    (paid 2026-03-30) that no fixed-ceiling uniform band could represent.
+    Real severity is heavily right-skewed — frequent small-to-mid cases, an
+    occasional enormous one — not a flat band, so the sampler shape changed
+    along with the numbers: a uniform distribution puts zero probability
+    mass below its floor and a hard wall at its ceiling; this one does
+    neither.
+
+    ``floor`` is set at the low end of the board's $5K-$15K target (see
+    README) rather than down at $435, since that smallest historical case
+    was a lawyer-referral consultation subsidy — a different, much smaller
+    category of assistance than full case-funding litigation support, and
+    belongs in the idiosyncratic/other-operating bucket instead.
+
+    ``mu``/``sigma`` are chosen, not fit: median total severity (floor +
+    median lognormal draw) lands around $15K, matching the real cluster of
+    ordinary cases ($12.5K-$17K), while P(severity > $150,000) ≈ 3% — rare
+    but not vanishingly so, since it has already happened once in the ~2
+    years of detailed transaction data this engine has.
+    """
+
+    floor: float = 5_000.0
+    mu: float = 9.210340371976184  # ln(10_000)
+    sigma: float = 1.4
+
+    def sample(self, rng: Generator, n_draws: int) -> np.ndarray:
+        if n_draws == 0:
+            return np.zeros(0)
+        return self.floor + rng.lognormal(mean=self.mu, sigma=self.sigma, size=n_draws)
+
+
+@dataclass(frozen=True)
 class CaseFundingConfig:
     """Mechanism 2 configuration.
 
@@ -195,10 +233,16 @@ class CaseFundingConfig:
     frequency_sampler: FrequencySampler = field(default_factory=UniformDiscreteFrequency)
     severity_sampler: SeveritySampler = field(default_factory=UniformContinuousSeverity)
     frequency_provenance: str = (
-        "board-assumed (forward-looking planning assumption; n=1 historical "
-        "event is insufficient to estimate a rate empirically)"
+        "board-assumed (forward-looking planning assumption; informed by a 2015-2026 "
+        "archive review showing ~1 funded case/yr long-run but bursty, with an uptick "
+        "to 2 in 2026 alone — still far too thin and irregular to fit a rate empirically)"
     )
-    severity_provenance: str = "board-assumed (adopted as a solvency constraint; see docstring)"
+    severity_provenance: str = (
+        "board-assumed (adopted as a solvency constraint; see docstring). A heavier-"
+        "tailed ShiftedLogNormalSeverity alternative was evaluated (see its docstring) "
+        "and would raise the p99 requirement from $315,143 to $469,867 — the board "
+        "reviewed both and elected to keep this uniform band as the live default."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -267,6 +311,56 @@ class IPSConfig:
 
 
 # ---------------------------------------------------------------------------
+# Phase 2: allocation of holdings in excess of the reserve floor
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class AllocationConfig:
+    """Target weights for the portion of liquid holdings held in EXCESS of
+    the Phase 1 reserve floor. The floor itself is never allocated by this
+    config — it stays 100% cash per
+    ``IPSConfig.cash_equivalent_fraction_required``, regardless of these
+    weights.
+
+    Provenance: board-assumed, informed by real current market data and the
+    org's own history: a 2016-17 100% GIC / 0% equity era, then a 2021
+    50/50 "diversified low-carbon" balanced-fund era. A board review (Oct
+    2026) weighed real GIC-ladder rates (multi-issuer, ~3.5%-4.1% across
+    1-5yr terms, vs. Scotiabank's own in-house 1yr rate of just 2.45%)
+    against the fund actually used historically (Scotia Low Carbon Global
+    Balanced Fund: 1yr return 3.92%, but 5yr only 2.15% annualized,
+    confirming it carries real volatility, not free return). The board
+    chose 60% fixed income / 40% equity — more conservative than 2021's
+    50/50, less conservative than the 2016-17 GIC-only era — consistent
+    with "low return, low risk is fine, we are not an investment club."
+
+    ``target_band`` is a +/- tolerance around each target weight for the
+    compliance check (e.g. 0.05 = flag anything more than 5 points off
+    target). Not independently board-ratified — a reasonable default
+    pending the real IPS document, which specifies the reserve-floor cash
+    requirement but was never found to specify an excess-tranche split.
+
+    Expected returns are real, current, sourced figures (not fabricated),
+    not guarantees: fixed-income uses a laddered multi-issuer GIC rate
+    rather than relying on Scotiabank's own below-market rate; equity uses
+    the existing low-carbon fund's trailing 1-year return.
+    """
+
+    fixed_income_target_weight: float = 0.60
+    equity_target_weight: float = 0.40
+    target_band: float = 0.05
+    fixed_income_expected_return: float = 0.038
+    equity_expected_return: float = 0.0392
+    provenance: str = (
+        "board-assumed (Oct 2026): 60/40 fixed-income/equity for holdings above "
+        "the reserve floor, chosen over a 70/30 alternative and the 2016-era "
+        "100/0 GIC-only split, after reviewing real GIC-ladder rates against the "
+        "Scotia Low Carbon Global Balanced Fund's actual return/volatility."
+    )
+
+
+# ---------------------------------------------------------------------------
 # Top-level simulation configuration
 # ---------------------------------------------------------------------------
 
@@ -290,6 +384,7 @@ class FortuneConfig:
     tail: TailConfig = field(default_factory=TailConfig)
     liquid_holdings: LiquidHoldings = field(default_factory=LiquidHoldings)
     ips: IPSConfig = field(default_factory=IPSConfig)
+    allocation: AllocationConfig = field(default_factory=AllocationConfig)
     simulation: SimulationConfig = field(default_factory=SimulationConfig)
 
 

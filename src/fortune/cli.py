@@ -93,9 +93,16 @@ def build_config(args: argparse.Namespace) -> FortuneConfig:
             high=args.frequency_max if args.frequency_max is not None else freq.high,
         )
     if args.severity_min is not None or args.severity_max is not None:
+        # The current severity_sampler may not be a UniformContinuousSeverity
+        # (e.g. the default ShiftedLogNormalSeverity has no .low/.high), so
+        # fall back to UniformContinuousSeverity's own defaults rather than
+        # assuming the existing sampler's attribute names.
+        default_uniform = UniformContinuousSeverity()
+        base_low = sev.low if hasattr(sev, "low") else default_uniform.low
+        base_high = sev.high if hasattr(sev, "high") else default_uniform.high
         sev = UniformContinuousSeverity(
-            low=args.severity_min if args.severity_min is not None else sev.low,
-            high=args.severity_max if args.severity_max is not None else sev.high,
+            low=args.severity_min if args.severity_min is not None else base_low,
+            high=args.severity_max if args.severity_max is not None else base_high,
         )
     if freq is not cf.frequency_sampler or sev is not cf.severity_sampler:
         config = replace(config, case_funding=replace(cf, frequency_sampler=freq, severity_sampler=sev))

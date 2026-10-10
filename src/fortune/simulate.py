@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 import numpy as np
 import pandas as pd
 
+from fortune.allocation import AllocationRecommendation, recommend_allocation
 from fortune.baseline import BaselineResult, compute_annual_baseline
 from fortune.case_funding import historical_case_funding_events, simulate_annual_case_funding
 from fortune.classify import classify_transactions
@@ -115,6 +116,7 @@ class SimulationResult:
     model_recommended_buffer: dict[float, float]
     liquid_holdings: LiquidHoldings
     coverage: dict[float, CoverageResult]
+    allocation_recommendation: AllocationRecommendation
     tail_ci_p95: BootstrapCIResult
     n_case_funding_history: int
     n_idiosyncratic_history: int
@@ -190,6 +192,9 @@ def run_simulation(config: FortuneConfig, transactions: pd.DataFrame) -> Simulat
         for level in confidence_levels
     }
 
+    effective_planning_minimum = max(ips_minimum_reserve, max(model_recommended_buffer.values()))
+    allocation_recommendation = recommend_allocation(liquid_total, effective_planning_minimum, config.allocation)
+
     tail_ci_p95 = bootstrap_percentile_ci(rng, idiosyncratic_amounts, 0.95, config.tail)
 
     n_case_funding_history = len(historical_case_funding_events(classified))
@@ -233,6 +238,7 @@ def run_simulation(config: FortuneConfig, transactions: pd.DataFrame) -> Simulat
         model_recommended_buffer=model_recommended_buffer,
         liquid_holdings=config.liquid_holdings,
         coverage=coverage,
+        allocation_recommendation=allocation_recommendation,
         tail_ci_p95=tail_ci_p95,
         n_case_funding_history=n_case_funding_history,
         n_idiosyncratic_history=n_idiosyncratic_history,

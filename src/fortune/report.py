@@ -116,6 +116,27 @@ def render_report(result: SimulationResult) -> str:
         )
     w("")
 
+    w(_SUBRULE)
+    w("PORTFOLIO ALLOCATION RECOMMENDATION (holdings above the reserve floor)")
+    w(_SUBRULE)
+    a = result.allocation_recommendation
+    w(f"  Reserve floor (always 100% cash, never allocated): {_fmt_money(a.reserve_floor)}")
+    if a.shortfall > 0:
+        w(f"  Current holdings are {_fmt_money(a.shortfall)} SHORT of that floor.")
+        w("  Nothing to allocate: a shortfall against the floor is a Phase 1 finding, not a Phase 2 one.")
+    else:
+        w(f"  Cash held against the floor:                       {_fmt_money(a.cash_floor_amount)}")
+        w(f"  Excess available to allocate:                      {_fmt_money(a.excess_amount)}")
+        w("")
+        w("  Recommended split of the excess (board-assumed, see AllocationConfig for provenance):")
+        w(f"    Fixed income (GIC ladder, multi-issuer):   {_fmt_money(a.fixed_income_amount)}")
+        w(f"    Equity (existing low-carbon balanced fund): {_fmt_money(a.equity_amount)}")
+        w(
+            f"  Expected annual return on the excess: {_fmt_money(a.expected_annual_return)} "
+            f"({a.expected_annual_return_pct:.2%}) — real current rates, not guaranteed."
+        )
+    w("")
+
     if result.warnings:
         w(_SUBRULE)
         w("WARNINGS")
